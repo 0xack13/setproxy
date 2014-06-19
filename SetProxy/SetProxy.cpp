@@ -1,7 +1,12 @@
 #include "stdafx.h"
 #include <tchar.h>
 #include <stdio.h>
+#include <iostream>
 
+#include <string>
+using namespace std;
+
+#include <conio.h>
 
 #include <windows.h>
 #include <wininet.h>
@@ -16,7 +21,7 @@ BOOL SetConnectionProxy(char * proxyAdressStr, char * connNameStr = NULL)
 	DWORD   dwBufferSize = sizeof(conn_options);
 	conn_options.dwSize = dwBufferSize;
 
-	conn_options.pszConnection = connNameStr;//NULL == LAN
+	conn_options.pszConnection = connNameStr;
 
 	conn_options.dwOptionCount = 3;
 	conn_options.pOptions = new INTERNET_PER_CONN_OPTION[3];
@@ -51,7 +56,7 @@ BOOL RemoveConnectionProxy(char* connectionNameStr = NULL)
 
 	conn_options.dwSize = dwBufferSize;
 
-	conn_options.pszConnection = connectionNameStr; //NULL - LAN	
+	conn_options.pszConnection = connectionNameStr;
 	conn_options.dwOptionCount = 1;
 
 	conn_options.pOptions = new INTERNET_PER_CONN_OPTION[conn_options.dwOptionCount];
@@ -71,14 +76,18 @@ BOOL RemoveConnectionProxy(char* connectionNameStr = NULL)
 	return bReturn;
 }
 
-
+//e.g. C:\>SetProxy.exe # No proxy settings "Direct Access"
+//	   C:\SetProxy.exe 221.22.3.2:8080 #The new argument will be set as the proxy address & port number
 int _tmain(int argc, _TCHAR* argv[])
 {
-	printf("0xack13 - Using proxy\r\n");
-
-	SetConnectionProxy("your_proxy_server:8080");
-	//RemoveConnectionProxy();
-
+	if (argc <= 1)
+	{
+		RemoveConnectionProxy();
+		printf("No proxy.\r\n");
+		exit(1);
+	}
+	char *pFilename = argv[1];
+	SetConnectionProxy(pFilename);
 	return 0;
 }
 

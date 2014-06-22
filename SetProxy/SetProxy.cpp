@@ -1,16 +1,21 @@
 #include "stdafx.h"
 #include <tchar.h>
 #include <stdio.h>
-#include <iostream>
 
-#include <string>
-using namespace std;
-
+#include <string.h>
 #include <conio.h>
+
 
 #include <windows.h>
 #include <wininet.h>
 #pragma comment(lib,"wininet.lib")
+
+#include <iostream>
+using namespace std;
+
+//Support printing bool value
+#define BOOL_FMT(bool_expr) "%s=%s\n", #bool_expr, (bool_expr) ? "true" : "false"
+
 
 
 BOOL SetConnectionProxy(char * proxyAdressStr, char * connNameStr = NULL)
@@ -40,12 +45,42 @@ BOOL SetConnectionProxy(char * proxyAdressStr, char * connNameStr = NULL)
 
 	bReturn = InternetSetOption(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &conn_options, dwBufferSize);
 
+	printf(BOOL_FMT(bReturn));
+
 	delete[] conn_options.pOptions;
 
 	InternetSetOption(NULL, INTERNET_OPTION_SETTINGS_CHANGED, NULL, 0);
 	InternetSetOption(NULL, INTERNET_OPTION_REFRESH, NULL, 0);
-
 	return bReturn;
+}
+
+//Check if the bypass proxy list has been set or not.
+bool IsBypassLocalServer()
+{
+	bool res = false;
+
+	INTERNET_PER_CONN_OPTION_LIST list;
+	memset(&list, 0, sizeof(list));
+	DWORD dwSize = sizeof(list);
+
+	INTERNET_PER_CONN_OPTION entry;
+	memset(&entry, 0, sizeof(entry));
+	entry.dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
+
+	list.dwSize = sizeof(list);
+	list.dwOptionCount = 1;
+	list.pOptions = &entry;
+
+	if (InternetQueryOption(NULL, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, &dwSize))
+	{
+		if (entry.Value.pszValue != NULL)
+		{
+			res = strstr(entry.Value.pszValue, _T("local")) != NULL;
+			GlobalFree(entry.Value.pszValue);
+			entry.Value.pszValue = NULL;
+		}
+	}
+	return res;
 }
 
 BOOL RemoveConnectionProxy(char* connectionNameStr = NULL)
@@ -88,6 +123,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	char *pFilename = argv[1];
 	SetConnectionProxy(pFilename);
+	bool res = IsBypassLocalServer();
+	printf(BOOL_FMT(res));
+
 	return 0;
 }
 
